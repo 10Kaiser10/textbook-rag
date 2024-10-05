@@ -8,21 +8,17 @@ from config import PINECONE_API_KEY
 
 pdf_folder = 'data/pdfs/'
 text_folder = 'data/extracted_text/'
-
+chunk_map_path = 'data/chunks/mapping.pickle'
 tokenizer = AutoTokenizer.from_pretrained("intfloat/multilingual-e5-large")
-
 tokens_per_chunk = 500
 chunk_overlap = 0.2
-
 pc = Pinecone(api_key=PINECONE_API_KEY)
 index_name = "textbook-rag"
 
 
 
-
-#extract_and_save_text(text_folder, pdf_folder)
 chunks = chunk_texts_from_folder(tokenizer, text_folder, tokens_per_chunk, chunk_overlap)
 print("Total Chunks:", len(chunks))
 
-response = upsert_chunks(pc, index_name, chunks)
+response = upsert_chunks(pc, index_name, chunks, chunk_map_path)
 print("Upserted Chunks:", response.upsertedCount)
