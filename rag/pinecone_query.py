@@ -1,33 +1,43 @@
 import pickle
+from langchain_core.retrievers import BaseRetriever
+from langchain_core.documents import Document
 
-def pinecone_query(text, pc, index_name, embedding_mdl = "multilingual-e5-large", k=3):
-    index = pc.Index(index_name)
+class PineconeRetriever(BaseRetriever):
+    pc:any
+    index_name:str
+    embedding_mdl:str
+    k:int
+    mapping:dict
 
-    embedding = pc.inference.embed(
-        model= embedding_mdl,
-        inputs= [text,],
-        parameters= {"input_type": "query", "truncate": "NONE"}
-    )
+    def pinecone_query(self, text, pc, index_name, embedding_mdl = "multilingual-e5-large", k=3):
+        index = pc.Index(index_name)
 
-    result = index.query(
-        vector=embedding[0].values,
-        top_k=k,
-        include_values=False,
-        include_metadata=True
-    )
+        embedding = pc.inference.embed(
+            model= embedding_mdl,
+            inputs= [text,],
+            parameters= {"input_type": "query", "truncate": "NONE"}
+        )
 
-    return result
+        result = index.query(
+            vector=embedding[0].values,
+            top_k=k,
+            include_values=False,
+            include_metadata=True
+        )
 
-def query_text(text, mapping_path, pc, index_name, embedding_mdl = "multilingual-e5-large", k=3):
-    result = pinecone_query(text, pc, index_name, embedding_mdl, k)
+        return result
 
-    with open(mapping_path, 'rb') as f:
-        mapping = pickle.load(f)
+    def query_text(self, text, mapping, pc, index_name, embedding_mdl = "multilingual-e5-large", k=3):
+        result = self.pinecone_query(text, pc, index_name, embedding_mdl, k)
 
-    output_chunks = []
+        output_documents = []
 
-    for match in result['matches']:
-        match_id = match['id']
-        output_chunks.append(mapping[match_id])
+        for match in result['matches']:
+            match_id = match['id']
+            doc = Document(page_content=mapping[match_id])
+            output_documents.append(doc)
 
-    return output_chunks
+        return output_documents
+    
+    def _get_relevant_documents(self, query, *, run_manager):
+        return self.query_text(query, self.mapping, self.pc, self.index_name, self.embedding_mdl, self.k)
