@@ -1,0 +1,16 @@
+id,path,desc
+1,img1.png,Vibrating tuning fork just touching the suspended table tennis ball
+2,img2.png,One of the prongs of the vibrating tuning fork touching the water surface
+3,img3.png,Both the prongs of the vibrating tuning fork dipped in water
+4,img4.png,A vibrating object creating a series of compressions (C) and rarefactions (R) in the medium
+5,img5.png,Longitudinal wave in a slinky
+6,img6.png,Image of H.R. Hertz
+7,img7.png,Sound propagates as density or pressure variations as shown in (a) and (b) and (c) represents graphically the density and pressure variations
+8,img8.png,Low pitch sound has low frequency and high pitch of sound has high frequency
+9,img9.png,Soft sound has small amplitude and louder sound has large amplitude
+10,img10.png,Reflection of sound
+11,img11.png,A megaphone and a horn
+12,img12.png,Stethoscope
+13,img13.png,Sound board used in a big hall
+14,img14.png,Curved ceiling of a conference hall
+15,img15.png,Ultrasound is reflected back from the defective locations inside a metal block

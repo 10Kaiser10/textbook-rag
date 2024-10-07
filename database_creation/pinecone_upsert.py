@@ -9,7 +9,7 @@ def create_chunk_map(ids, chunks, map_path):
     return mapping
 
 
-def upsert_chunks(pc, index_name, chunks, map_path, embedding_mdl = "multilingual-e5-large"):
+def upsert_chunks(pc, index_name, chunks, map_path=None, ids=None, embedding_mdl = "multilingual-e5-large"):
     index = pc.Index(index_name)
 
     embeddings = pc.inference.embed(
@@ -18,7 +18,8 @@ def upsert_chunks(pc, index_name, chunks, map_path, embedding_mdl = "multilingua
         parameters= {"input_type": "passage", "truncate": "NONE"}
     )
 
-    ids = [str(n) for n in range(len(chunks))]
+    if ids is None:
+        ids = [str(n) for n in range(len(chunks))]
 
     vectors = []
     for idx, emb in enumerate(embeddings):
@@ -31,6 +32,7 @@ def upsert_chunks(pc, index_name, chunks, map_path, embedding_mdl = "multilingua
         vectors=vectors
     )
 
-    create_chunk_map(ids, chunks, map_path)
+    if map_path is not None:
+        create_chunk_map(ids, chunks, map_path)
 
     return response
