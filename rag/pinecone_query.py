@@ -1,9 +1,10 @@
 import pickle
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.documents import Document
+from pinecone import Pinecone
 
 class PineconeRetriever(BaseRetriever):
-    pc:any
+    pc:Pinecone
     index_name:str
     embedding_mdl:str
     k:int
