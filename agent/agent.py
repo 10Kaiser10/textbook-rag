@@ -8,6 +8,7 @@ from langchain_core.tools import tool
 from rag.pipeline import RAG_Piepline
 from langchain_core.runnables import Runnable
 from operator import itemgetter
+from rag.pinecone_query import PineconeImageRetriever
 
 def generate_response(ques):
     return "response"
@@ -38,6 +39,7 @@ class Agent:
     def __init__(
             self, groq_api_key, langchain_api_key, 
             rag_retriever,
+            image_retriever,
             model='llama-3.1-8b-instant',
             langchain_project="textbook-rag", enable_tracing='true', langchain_endpoint="https://api.smith.langchain.com"
             ):
@@ -48,6 +50,8 @@ class Agent:
         self.llm = ChatGroq(model=model, temperature=0.5, max_retries=2, api_key=groq_api_key)
         self.llm_rag_router = ChatGroq(model=model, temperature=0.5, max_retries=2, api_key=groq_api_key)
         #self.llm_rag_router = self.llm_rag_router.bind_tools([rag_tool])
+
+        self.image_retriever = image_retriever
         
     def init_langsmith(self, langchain_api_key, langchain_project="textbook-rag", enable_tracing='true', langchain_endpoint="https://api.smith.langchain.com"):
         os.environ["LANGCHAIN_TRACING_V2"] = enable_tracing
@@ -56,18 +60,6 @@ class Agent:
         os.environ["LANGCHAIN_PROJECT"] = langchain_project
 
     def rag_router_call(self, query, llm):
-        # template = """
-        #     You are an expert in determining whether a incoming message is related to textbook or not.
-        #     The summary, structure and topics in the textbook are mentioned below. You are to determine if the textbook will be helpfull in answering the incoming message.
-        #     If the message relates to the textbook, output "1" else "0". Only output either of these two numbers and nothing else.
-
-        #     Summary, structure and topics in the textbook:
-        #     {topics}
-
-        #     Incoming Message:
-        #     {message}
-        # """
-
         template = """
             You have access to a summary of a textbook. This summary contains the following:
                 - A short summary of the textbook.
@@ -101,13 +93,16 @@ class Agent:
     def query(self, text_input):
         rag_router_response = self.rag_router_call(text_input, self.llm_rag_router)
 
-        print(rag_router_response.content)
-        print(rag_router_response.tool_calls)
+        print(rag_router_response)
 
-        #if len(rag_router_response.tool_calls) > 0:
+        img_data = (None, None)
+
         if rag_router_response.content.lower() == "1":
             response = self.rag.get_response(text_input)
+
+            img_path, img_scr = self.image_retriever.get_relevant_image(response)
+            img_data = (img_path, img_scr)
         else:
             response = self.llm.invoke(text_input).content
 
-        return response
+        return response, img_data
