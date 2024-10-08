@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG Chatbot</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- First section: Chatbot interaction -->
+        <h1>Textbook Agent</h1>
+        <p>The agent uses RAG to answer queries regarding sound waves from NCERT textbook</p>
+        <br>
+        <h2>RAG Demo</h2>
+        <p>Type a question to the chatbot and get an intelligent response drawn from the NCERT textbook</p>
+        <p>The bot can't respond to questions from outside the chapter Sound Waves</p>
+        <input type="text" id="question-input" placeholder="Enter your question here" />
+        <button onclick="submitQuestion()">Submit</button>
+        <p class="response" id="question-response"></p>
+        <br>
+
+        <!-- Second section: Another task -->
+        <h2>Agent Demo</h2>
+        <p>Intelligent agent that can decide whether to use RAG or not</p>
+        <p>Uses RAG when the query relates to the text (Sound Waves), else directly generates the answer</p>
+        <p>Special Feature: Retrives an image from the textbook related to the generated answer when using RAG</p>
+        <input type="text" id="task-input" placeholder="Enter your question here" />
+        <button onclick="submitTask()">Submit</button>
+        <p class="response" id="task-response"></p>
+        <img id="task-image" src="" alt="" style="display:none; width: 100%; margin-top: 20px;" />
+    </div>
+
+    <script src="scripts.js"></script>
+</body>
+</html>
