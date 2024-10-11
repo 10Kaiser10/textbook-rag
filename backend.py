@@ -84,8 +84,8 @@ async def ask_agent(request: QueryRequest):
         # Call the RAG function with the query
         reply, img_data = agent.query(query)
         if img_data[0] is None:
-            img_data = ([""], [0])
-        return AgentQueryResponse(query=query, answer=reply, img_path=img_data[0][0], img_scr=img_data[1][0])
+            img_data = ("", 0)
+        return AgentQueryResponse(query=query, answer=reply, img_path=img_data[0], img_scr=img_data[1])
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
