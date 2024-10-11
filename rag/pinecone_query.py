@@ -53,7 +53,8 @@ class PineconeImageRetriever():
         self.image_fldr = image_fldr
 
         mapping_csv = pd.read_csv(mapping_csv_path)
-        self.mapping = dict(zip(mapping_csv['id'].astype(str).to_list(), mapping_csv['path'].to_list()))
+        self.path_mapping = dict(zip(mapping_csv['id'].astype(str).to_list(), mapping_csv['path'].to_list()))
+        self.desc_mapping = dict(zip(mapping_csv['id'].astype(str).to_list(), mapping_csv['desc'].to_list()))
 
     def pinecone_query(self, text, pc, index_name, embedding_mdl = "multilingual-e5-large", k=1):
         index = pc.Index(index_name)
@@ -76,16 +77,14 @@ class PineconeImageRetriever():
     def get_relevant_image(self, query):
         result = self.pinecone_query(query, self.pc, self.index_name, self.embedding_mdl, self.k)
 
-        output_paths = []
-        output_scores = []
+        output_list = []
 
         for match in result['matches']:
             match_id = match['id']
-            img_path = self.image_fldr + self.mapping[match_id]
-
+            img_desc = self.desc_mapping[match_id]
+            img_path = self.image_fldr + self.path_mapping[match_id]
             img_scr = match['score']
 
-            output_paths.append(img_path)
-            output_scores.append(img_scr)
+            output_list.append((img_path, img_desc, img_scr))
 
-        return output_paths, output_scores
+        return output_list
