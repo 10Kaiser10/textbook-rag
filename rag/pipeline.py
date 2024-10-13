@@ -91,6 +91,8 @@ class ReActRAG:
 
             Existing answer:
             {1}
+
+            If the answer is empty, generate an answer from scratch. If the answer already exists, only update parts of it (dont change the overall structure).
         """.format(question, answer, context)
 
         return self.generator_llm.invoke(prompt).content
@@ -102,14 +104,14 @@ class ReActRAG:
 
             You are given a question and its corresponding response. Your task is to critically assess the response and determine whether it meets the following criteria:
             1. **If the response is empty**, automatically classify it as **Not Satisfactory**.
-            2. **If the response addresses all aspects of the question**, classify it as **Satisfactory**.
-            3. **If the response fails to fully address the question**, classify it as **Not Satisfactory**.
+            2. **If the response fails to fully address the question**, classify it as **Not Satisfactory**.
+            3. **If the response contains lines mentioning that the information is not present in the context/documents**, classify it as **Not Satisfactory**.
+            4. **If the response addresses all aspects of the question**, classify it as **Satisfactory**.
 
             **Do not use any external information to fact-check the response**. Focus only on whether the response is complete and answers the question based on the information provided.
 
             Make sure your judgment is based on:
             - **Completeness**: Does the response cover all key parts of the question?
-            - **Clarity**: Is the response clear and easy to understand?
 
             Please classify the response accordingly.
 
@@ -124,7 +126,7 @@ class ReActRAG:
     
     def get_context(self, question, response):
         prompt = """
-            You are tasked with generating 2-4 lines of text that will be used to query a vector database to find relevant documents for retrieval-augmented generation (RAG). 
+            You are tasked with generating 2-4 lines of text that will be used to query (lookup) a vector database to find relevant documents for retrieval-augmented generation (RAG). 
 
             Important Instructions:
                 1. You are given a question and an incomplete or blank answer.
@@ -133,15 +135,17 @@ class ReActRAG:
                 4. **Do not speculate**, **assume**, or introduce any new facts, context, or knowledge.
                 5. The goal is to create a concise and relevant query that strictly adheres to the given question and answer.
                 6. The query should be plain text and should contain no fancy formatting or structure.
+                7. If the answer is empty, focus on mentioning the information required to answer the question correctly.
+                8. If the answer is present but incomplete, focus on mentioning the missing information.
 
             Question: {0}
             Existing (Incomplete) Answer: {1}
 
-            Generate the 2-4 lines of text for the lookup.
+            Generate only 2-4 lines of text. These lines should mention the information required to answer the question sufficiently.
         """.format(question, response)
 
         lookup = self.generator_llm.invoke(prompt).content
-        #print("lookup:\n", lookup)
+        print("lookup:\n", lookup)
         documents = self.retriever.invoke(lookup)
         context = self.format_docs(documents)
         return context
@@ -152,13 +156,13 @@ class ReActRAG:
         current_response = ""
 
         while(n>0):
-            #print('iters left:', n)
+            print('iters left:', n)
             context = self.get_context(question, current_response)
-            #print('context:\n', context)
+            print('context:\n', context)
             current_response = self.update_response(question, current_response, context)
-            #print('response:\n', current_response)
+            print('response:\n', current_response)
             router_out = self.check_router(question, current_response)
-            #print('router:\n', router_out)
+            print('router:\n', router_out)
 
             if router_out == 'satisfactory':
                 break

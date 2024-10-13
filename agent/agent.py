@@ -5,7 +5,7 @@ from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.tools import tool
-from rag.pipeline import ReActRAG
+from rag.pipeline import RAG_Piepline, ReActRAG
 from langchain_core.runnables import Runnable
 from operator import itemgetter
 from rag.pinecone_query import PineconeImageRetriever
@@ -33,9 +33,10 @@ class Agent:
         
         self.init_langsmith(langchain_api_key=langchain_api_key, langchain_project=langchain_project, enable_tracing=enable_tracing, langchain_endpoint=langchain_endpoint)
 
-        self.generator_llm = ChatGroq(model=model, temperature=1, max_retries=2, api_key=groq_api_key)
-        self.router_llm = ChatGroq(model=model, temperature=1, max_retries=2, api_key=groq_api_key)
-        self.rag = ReActRAG(rag_retriever, self.generator_llm, self.router_llm, langchain_api_key)
+        self.generator_llm = ChatGroq(model=model, temperature=0.1, max_retries=2, api_key=groq_api_key)
+        self.router_llm = ChatGroq(model=model, temperature=0.1, max_retries=2, api_key=groq_api_key)
+        #self.rag = ReActRAG(rag_retriever, self.generator_llm, self.router_llm, langchain_api_key, num_updates=3)
+        self.rag = RAG_Piepline(rag_retriever, groq_api_key, langchain_api_key, model=model)
 
         self.image_retriever = image_retriever
         
@@ -55,7 +56,8 @@ class Agent:
               - An image related to the answer whose short description is written below
             You were given the query and is trying to response to it.
             Generate a final response to the user query using your text answer and the image description.
-            Make sure to add a line or two in the answer which connects the final answer to the image.
+            Make sure to add a line or two in the answer which connects the final answer to the image. Dont add more than 1 or 2 lines to the answer.
+            Dont change the overall structure of the answer.
             Only output the final response and nothing else. Dont say things like "here's the final response" etc
 
             Query: {0}

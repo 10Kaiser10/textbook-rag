@@ -62,7 +62,7 @@ class PineconeImageRetriever():
         embedding = pc.inference.embed(
             model= embedding_mdl,
             inputs= [text,],
-            parameters= {"input_type": "query", "truncate": "NONE"}
+            parameters= {"input_type": "query", "truncate": "END"}
         )
 
         result = index.query(
