@@ -9,12 +9,12 @@
 <body>
     <div class="container">
         <!-- First section: Chatbot interaction -->
-        <h1>Textbook Agent</h1>
-        <p>The agent uses RAG to answer queries regarding sound waves from NCERT textbook</p>
+        <h1>Textbook Genie</h1>
+        <p>The agent uses RAG to tackle sound wave questions straight from the NCERT textbook.</p>
         <br>
         <h2>RAG Demo</h2>
         <p>Type a question to the chatbot and get an intelligent response drawn from the NCERT textbook</p>
-        <p>The bot can't respond to questions from outside the chapter Sound Waves</p>
+        <p>The bot can't respond to questions from outside the Sound Waves chapter</p>
         <input type="text" id="question-input" placeholder="Enter your question here" />
         <button onclick="submitQuestion()">Submit</button>
         <p class="response" id="question-response"></p>
@@ -23,8 +23,9 @@
         <!-- Second section: Another task -->
         <h2>Agent Demo</h2>
         <p>Intelligent agent that can decide whether to use RAG or not</p>
-        <p>Uses RAG when the query relates to the text (Sound Waves), else directly generates the answer</p>
-        <p>Special Feature: Retrives an image from the textbook related to the generated answer when using RAG</p>
+        <p>It also retrives image from the textbook that is relevent to the query</p>
+        <p>Here's how the pipeline works:</p>
+        <img src="./media/pipeline.jpg" alt="Pipeline">
         <input type="text" id="task-input" placeholder="Enter your question here" />
         <button onclick="submitTask()">Submit</button>
         <p class="response" id="task-response"></p>
