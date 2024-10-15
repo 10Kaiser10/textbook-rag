@@ -10,6 +10,71 @@ function hideLoading(button) {
     button.disabled = false;
 }
 
+function playWavFilesSequentially(wavFiles) {
+    let currentIndex = 0;
+
+    function playNext() {
+        if (currentIndex < wavFiles.length) {
+            // Create a new audio object for the current WAV file (base64 encoded)
+            const audio = new Audio("data:audio/wav;base64," + wavFiles[currentIndex]);
+
+            // Play the audio
+            audio.play();
+
+            // Once the current audio finishes, play the next one
+            audio.onended = function() {
+                currentIndex++;
+                playNext(); // Play the next WAV file
+            };
+        }
+    }
+
+    // Start playing the first WAV file
+    playNext();
+}
+
+// Function to play the speech using the TTS API
+function playSpeechRAG() {
+    const text = document.getElementById('question-response').innerText;
+
+    fetch('https://textbook-rag.onrender.com/tts', {  // Replace with your actual TTS API URL
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({text})
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Convert the received WAV string to a playable audio format
+        playWavFilesSequentially(data.audios)
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
+}
+
+// Function to play the speech using the TTS API
+function playSpeechAgent() {
+    const text = document.getElementById('task-response').innerText;
+
+    fetch('https://textbook-rag.onrender.com/tts', {  // Replace with your actual TTS API URL
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({text})
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Convert the received WAV string to a playable audio format
+        playWavFilesSequentially(data.audios)
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
+}
+
 // Function to submit the question to the chatbot API
 function submitQuestion() {
     const query = document.getElementById('question-input').value;
@@ -30,6 +95,7 @@ function submitQuestion() {
     .then(data => {
         // Display the returned string below the text input
         document.getElementById('question-response').innerText = data.answer;
+        document.getElementById('speech-btn-rag').style.display = 'inline-block';
     })
     .catch(error => {
         console.error('Error:', error);
@@ -72,6 +138,7 @@ function submitTask() {
             taskImage.style.display = 'none';
         }
 
+        document.getElementById('speech-btn-agent').style.display = 'inline-block';
         // Display the float (if needed, add it somewhere else or display in the console)
         console.log('Float value:', data.img_scr);
     })

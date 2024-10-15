@@ -100,3 +100,31 @@ html, body {
     overflow-x: hidden; /* Prevent horizontal scrolling */
     overflow-y: auto;   /* Allow vertical scrolling */
 }
+
+#speech-btn-rag {
+    padding: 10px 20px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+#speech-btn-rag:hover {
+    background-color: #45a049;
+}
+
+#speech-btn-agent {
+    padding: 10px 20px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+#speech-btn-agent:hover {
+    background-color: #45a049;
+}

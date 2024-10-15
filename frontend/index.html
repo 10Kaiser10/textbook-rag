@@ -17,6 +17,7 @@
         <p>The bot can't respond to questions from outside the Sound Waves chapter</p>
         <input type="text" id="question-input" placeholder="Enter your question here" />
         <button onclick="submitQuestion()">Submit</button>
+        <button id="speech-btn-rag" style="display:none;" onclick="playSpeechRAG()">Play Speech</button>
         <p class="response" id="question-response"></p>
         <br>
 
@@ -28,6 +29,7 @@
         <img src="./media/pipeline.jpg" alt="Pipeline">
         <input type="text" id="task-input" placeholder="Enter your question here" />
         <button onclick="submitTask()">Submit</button>
+        <button id="speech-btn-agent" style="display:none;" onclick="playSpeechAgent()">Play Speech</button>
         <p class="response" id="task-response"></p>
         <img id="task-image" src="" alt="" style="display:none; width: 100%; margin-top: 20px;" />
     </div>
