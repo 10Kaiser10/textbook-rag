@@ -9,7 +9,7 @@ pc = Pinecone(api_key=PINECONE_API_KEY)
 text_index_name = "textbook-rag"
 mapping_path = "data/chunks/mapping.pickle"
 embedding_mdl = "multilingual-e5-large"
-agent_mdl = "llama3-groq-70b-8192-tool-use-preview"
+agent_mdl = "llama-3.2-90b-vision-preview"
 k = 3
 
 with open(mapping_path, 'rb') as f:

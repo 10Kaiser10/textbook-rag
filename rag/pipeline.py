@@ -5,6 +5,8 @@ from langchain_groq import ChatGroq
 import os
 from pydantic import BaseModel, Field
 from typing import Literal
+from collections import Counter
+from langchain_core.documents import Document
 
 class RAG_Piepline:
     def __init__(self, retriever, groq_api_key, langchain_api_key, model='llama-3.1-8b-instant', langchain_project="textbook-rag", custom_template=None, enable_tracing='true', langchain_endpoint="https://api.smith.langchain.com"):
@@ -46,7 +48,7 @@ class RAG_Piepline:
     
 class ResponseRouteQuery(BaseModel):
     """Route the current response by checking if it satisfactorily answers the question"""
-    answer_quality: Literal["satisfactory", "not satisfactory"] = Field(
+    answer_quality: Literal["Satisfactory", "Not Satisfactory"] = Field(
         ...,
         description="Given a user question and the current response, figure out if the response satisfactorily answers the question",
     )
@@ -72,27 +74,44 @@ class ReActRAG:
 
     def update_response(self, question, answer, context):
         prompt = """
-            You are an AI agent tasked with updating and refining an existing answer based solely on the provided context.
+            You are an AI agent tasked with updating and refining an existing answer based solely on the provided context. 
 
-            Instructions:
-            1. You are given a question, an existing answer (which may be incomplete or empty), and context to help complete the answer.
-            2. Your job is to **fill in missing information** **using only the information from the context**. Dont change any already present information.
-            3. **Do not change the overall structure** of the existing answer. If it is empty, generate a new answer, but only using the context.
-            4. **No outside information** or facts are allowed. Only use the context, question, and existing answer.
-            5. If the relevant information to answer the question does not exist in the context, simply state: "The information is not present in the documents."
-            6. **Do not output any filler lines** such as "Here is the updated answer..." or other extraneous text.
-            7. **Follow any and all instructions mentioned in the question**
+            ### Instructions:
+            1. **Inputs:**
+            - A user question.
+            - An existing answer (which may be incomplete or empty).
+            - A set of context documents containing relevant information.
 
-            Context:
+            2. **Task:**
+            - If the existing answer is empty, generate a new answer **entirely from the context provided**.
+            - If the existing answer is incomplete, fill in the missing information **using only the context** without altering the existing structure or already present information.
+
+            3. **Strict Rules:**
+            - The context provided below is the only source of truth.
+            - If the necessary information to answer a part of the question (or the full question) is not present in the context, respond by saying that this part is not answerable based on the context.
+            - Do not add any unnecessary preambles, explanations, or filler text like "Here is the updated answer..."
+            - The goal is to answer the question sufficiently. Dont add unneccessary details or information which is not relevant to the question.
+
+            4. **Formatting:**
+            - Maintain the same structure as the existing answer. If it’s empty, create a new structured answer from scratch.
+            - Keep your response concise and directly relevant to the question.
+
+            ---
+
+            ### Inputs:
+            - **Context:**  
             {2}
 
-            Question:
+            - **Question:**  
             {0}
 
-            Existing answer:
+            - **Existing Answer:**  
             {1}
 
-            If the answer is empty, generate an answer from scratch. If the answer already exists, only update parts of it (dont change the overall structure).
+            ---
+
+            Update or generate the answer based on the above inputs.
+
         """.format(question, answer, context)
 
         return self.generator_llm.invoke(prompt).content
@@ -103,17 +122,13 @@ class ReActRAG:
             You are an expert evaluator, tasked with determining whether a response fully and satisfactorily answers a given question. You must evaluate the response **solely based on the information in the question and answer**, without using any outside facts or knowledge.
 
             You are given a question and its corresponding response. Your task is to critically assess the response and determine whether it meets the following criteria:
-            1. **If the response is empty**, automatically classify it as **Not Satisfactory**.
-            2. **If the response fails to fully address the question**, classify it as **Not Satisfactory**.
-            3. **If the response contains lines mentioning that the information is not present in the context/documents**, classify it as **Not Satisfactory**.
-            4. **If the response addresses all aspects of the question**, classify it as **Satisfactory**.
+            - **If the response is empty**, automatically classify it as **Not Satisfactory**.
+            - **If the response fails to fully address the question**, classify it as **Not Satisfactory**.
+            - **If the response contains lines mentioning that the information is not present in the context/documents**, classify it as **Not Satisfactory**.
+            - **If the response contains lines mentioning "Not answerable based on the context provided"**, classify it as **Not Satisfactory**.
+            - **If the response addresses all aspects of the question**, classify it as **Satisfactory**.
 
             **Do not use any external information to fact-check the response**. Focus only on whether the response is complete and answers the question based on the information provided.
-
-            Make sure your judgment is based on:
-            - **Completeness**: Does the response cover all key parts of the question?
-
-            Please classify the response accordingly.
 
             Question:
             {0}
@@ -124,29 +139,67 @@ class ReActRAG:
 
         return structured_llm_router.invoke(prompt).answer_quality
     
+    def vectorstore_lookup(self, lookup_query):
+        queries = lookup_query.split('\n')
+        print(queries)
+
+        all_documents = []
+
+        for query in queries:
+            if not query.strip():
+                continue
+            
+            print(query)
+            documents = self.retriever.invoke(query)
+            
+            all_documents += [x.page_content for x in documents]
+        
+        freq = Counter(all_documents)
+        filtered_docs = [Document(page_content=num) for num, _ in freq.most_common(3)]
+
+        print("all docs\n", all_documents)
+        print("filtered docs\n", filtered_docs)
+
+        return filtered_docs
+
+
     def get_context(self, question, response):
         prompt = """
-            You are tasked with generating 2-4 lines of text that will be used to query (lookup) a vector database to find relevant documents for retrieval-augmented generation (RAG). 
+            You are tasked with generating **three distinct queries** that will be used to query a vector database to retrieve relevant chunks of a document for answering a user's question. The goal is to find context that fills any gaps in an incomplete answer or addresses the question fully if the current answer is empty.
 
-            Important Instructions:
-                1. You are given a question and an incomplete or blank answer.
-                2. You must **only** use the exact information present in the question and the existing answer. **Do not add any new information**.
-                3. If there is insufficient information, focus solely on rephrasing or using keywords already provided.
-                4. **Do not speculate**, **assume**, or introduce any new facts, context, or knowledge.
-                5. The goal is to create a concise and relevant query that strictly adheres to the given question and answer.
-                6. The query should be plain text and should contain no fancy formatting or structure.
-                7. If the answer is empty, focus on mentioning the information required to answer the question correctly.
-                8. If the answer is present but incomplete, focus on mentioning the missing information.
+            ### Important Instructions:
+            1. **Input Information:**
+            - You are given a question and an existing answer, which may be empty or incomplete.
+            2. **Query Generation Goals:**
+            - Each query must focus on retrieving information to address the question or improve the answer.
+            - If the answer is empty, focus on extracting information to answer the question entirely.
+            - If the answer is incomplete, focus on retrieving information to fill the gaps in the existing answer.
+            - Each query should address the information that is currently missing from answer.
+            3. **Guidelines for Query Creation:**
+            - Use only the information provided in the question and the answer. **Do not add any new information or assumptions.**
+            - Rephrase or extract keywords to form concise and specific queries.
+            - Ensure that the three queries are distinct and explore different aspects or keywords from the given inputs.
+            - Avoid redundancy between the queries.
+            4. **Format:**
+            - Generate exactly three lines seperate by newline character
+            - Each line should contain one query.
+            - Keep each query concise and specific, ideally in 1-4 sentences.
+            - Avoid any formatting other than plain text.
+            - Seperate the queries using newline character to make it easy to split them. Dont add any empty lines between two lines.
+            - Dont add any filler texts like "here are three distinct queries to retrieve relevant context"
 
-            Question: {0}
-            Existing (Incomplete) Answer: {1}
+            ### Inputs:
+            - **Question:** {0}
+            - **Existing (Incomplete) Answer:** {1}
 
-            Generate only 2-4 lines of text. These lines should mention the information required to answer the question sufficiently.
+            ### Task:
+            Generate **three distinct queries** based on the provided inputs. Each query should be focused on retrieving relevant context to answer the question sufficiently.
         """.format(question, response)
 
         lookup = self.generator_llm.invoke(prompt).content
         print("lookup:\n", lookup)
-        documents = self.retriever.invoke(lookup)
+        #documents = self.retriever.invoke(lookup)
+        documents = self.vectorstore_lookup(lookup)
         context = self.format_docs(documents)
         return context
 
@@ -164,7 +217,7 @@ class ReActRAG:
             router_out = self.check_router(question, current_response)
             print('router:\n', router_out)
 
-            if router_out == 'satisfactory':
+            if router_out == 'Satisfactory':
                 break
 
             n -= 1

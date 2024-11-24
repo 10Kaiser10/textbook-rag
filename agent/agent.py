@@ -35,8 +35,8 @@ class Agent:
 
         self.generator_llm = ChatGroq(model=model, temperature=0.1, max_retries=2, api_key=groq_api_key)
         self.router_llm = ChatGroq(model=model, temperature=0.1, max_retries=2, api_key=groq_api_key)
-        #self.rag = ReActRAG(rag_retriever, self.generator_llm, self.router_llm, langchain_api_key, num_updates=3)
-        self.rag = RAG_Piepline(rag_retriever, groq_api_key, langchain_api_key, model=model)
+        self.rag = ReActRAG(rag_retriever, self.generator_llm, self.router_llm, langchain_api_key, num_updates=3)
+        #self.rag = RAG_Piepline(rag_retriever, groq_api_key, langchain_api_key, model=model)
 
         self.image_retriever = image_retriever
         
