@@ -23,7 +23,7 @@
 
 ##  **How it Works**
 
-![Pipeline](https://github.com/10Kaiser10/textbook-rag/blob/main/frontend/media/pipeline.jpg)
+![Pipeline](https://github.com/10Kaiser10/textbook-rag/blob/main/frontend/media/pipeline.png)
 
   
 
